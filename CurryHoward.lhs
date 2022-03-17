@@ -3,8 +3,10 @@
 \newcommand{\proves}{\vdash}
 \usepackage{amsthm}
 \usepackage{amsmath}
+\usepackage{amssymb}
 \newtheorem{theorem}{Theorem}
 \newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
 \newtheorem*{remark}{Remark}
 
 \title{The Curry-Howard Isomorphism for Propositional Logic}
@@ -263,6 +265,7 @@ Here, we will present the Church-system of simply-typed lambda calculus.
 We will note that there is also a Curry-system of simply-typed lambda calculus,
 that is mostly equivalent. 
 
+\subsection{Simple Types and Pre-Terms}
 In the simply-typed lambda calculus, we have two sorts of objects: types and terms. 
 Both types and terms will be using \textit{syntactic} rules; 
 meanwhile, terms will be assigned at most one type by the \textit{typability} relation;
@@ -277,6 +280,9 @@ List a = Cons a (List a) | Empty
 \end{spec}
 } 
 In the context of the simply-typed lambda calculus, members of $PV$ are called \textit{type variables}. 
+If $\sigma$ and $\tau$ are types and $\alpha$ is a type variable, 
+we write $\sigma[\alpha:=\tau]$ to denote the type resulting from substitution of $\tau$
+for every occurence of $\alpha$ in $\sigma$. 
 
 Syntactically, programs in the lambda-calculus are first written in terms of the rules for forming \textit{pre-terms}. 
 We begin with a countably infinite alphabet of variables $V$. 
@@ -306,7 +312,62 @@ More formally, the set of free variables is defined inductively such that
 \item $FV(M\; N)= FV(M)\cup FV(N)$. 
 \end{itemize} 
 
+\subsection{Typability}
+We can see the free variables of terms in the lambda-calculus as referring to black-box programs
+of some type provided by an outside context, and computation in the lambda-calculus as manipulations
+of those programs. 
+
+We would like to see be able to check that given the black-box programs supplied by our context, 
+the manipulations on those programs we define in a lambda-term make semantic sense. 
+In particular, when we our context supplies a program $f$ with type $\phi\to\psi$, 
+we mean that $(f x)$ (which we recall is the lambda calculus expression representing $f(x)$) 
+only has a well defined meaning when $x$ has type $\phi$, 
+so we want to make sure the computation our term specifies only ever applies $f$
+to terms of type $\phi$. 
+
+Thus: we call a finite $\Gamma\subset V\times\Phi$ such that 
+$\Gamma$ defines a function from its \textit{domain} $\{x\in V\mid \exists \phi((x,\phi)\in\Gamma)\}$ to $\Phi$ 
+a \textit{context}. 
+Denote by $C$ the set of such contexts $\Gamma$.  
+We denote the pairs $(x,\phi)\in \Gamma$ as $x:\phi$, 
+which we interpret as $\Gamma$ assigning the type $\phi$ to the variable $x$. 
+We note that we use the same shorthands for denoting contexts in intuitionistic logic: 
+eg, $\Gamma,x:\phi$ denotes $\Gamma\cup\{x:\phi\}$. 
+
+Then, we can define a three-way relation between types $\Gamma\in C$, pre-terms $M\in\Lambda_\Phi^-$, and types $\phi\in\Phi$ called \textit{typability}, which we denote as $\Gamma\vdash M:\phi$. 
+
+We define typability inductively and case-wise as follows:
+\begin{itemize}
+\item If $M$ is a free variable $x\in V$, then, $\Gamma\vdash M:\phi$ if and only if $x:\phi\in\Gamma$. 
+\item If $M$ is equal to an application term $(P Q)$, then, $\Gamma\vdash M\colon\phi$ 
+if and only if there exists some $\psi$ such that $\Gamma\vdash P \colon \psi\to\phi$ and $\Gamma\vdash Q\colon\psi$. 
+\item If $M$ is equal to an abstraction term $\lambda x:\psi\; N$, then, $\Gamma\vdash P\colon\phi$
+if and only if there exists some $\tau$ such that $\phi= \psi\to\tau$ and 
+$\Gamma,x:\psi \vdash N\colon\tau$. 
+In this term we treat the abstraction term as supplying the context of $N$
+with an additional variable $x$ of type $\psi$,
+and $\lambda x:\psi\: N$ as having the type of a function with domain $\psi$
+and the codomain being whatever type $N$ has when evaluated after being supplied
+an $x$ of type $\psi$.
+\end{itemize} 
+
+We call pre-terms $M$ such that there exists some $\Gamma$ and some $\phi$ such that $\Gamma\vdash M:\phi$
+\textit{typable}. We note that if a pre-term $M$ has a type under $\Gamma$, that type is unique. 
+
+Finally, we note the substitution lemma:
+\begin{lemma}[Substitution]
+If $\Gamma\vdash M:\phi$, then, $\Gamma[\alpha:=\tau]\vdash M:\phi[\alpha:=\tau].$
+\end{lemma}
+
+\subsection{Substitution and $\alpha$-equivalence}
+
 The basic model of lambda calculus is computation by executing symbolic substitution rules. 
+We will want to define two definitions of equivalence in the lambda-calculus. 
+First, $\cong_\alpha$ will denote the fact that two strings (pre-terms) represent the same program,
+ie, the same substitution rules.
+Then, $\cong_\beta$ will denote the fact that two programs represent the same \textit{value}, 
+ie, they will eventually evaluate to the same thing.
+
 For a pre-term $M$ we write $M[x:=N]$ to denote the substitution of $N$ for $x$ in $M$. 
 In doing so, we replace every \textit{free} instance of $x$ in $M$ by $N$, 
 while preserving the set of free variables of $N$. 
@@ -332,8 +393,110 @@ Thus, we will rename the $y$ variable in the original abstraction term to someth
 that doesn't conflict with $N$ before substituting $N$ in. This leads us to our last rule: 
 \item $(\lambda y.\phi\; P)[x:=N] = (\lambda z. \phi\; P[y:=z][x:=N])$ for some choice of $z\notin FV(P)\cup FV(N)$ when $y\neq x$ and $y\in FV(n)$. 
 \end{itemize}
-\subsection{Church-Rosser Theorem} 
+
+We want to expand on a bit more on the names of argument variables not mattering. 
+We will eventually want to define $(\lambda x.\phi\; N)\; M$ as representing 
+the substitution rule where we substitute all occurences of $x$ in $N$ with $M$. 
+Its clear that the variable $x$ here is strictly temporary, and thus 
+$(\lambda y.\phi\;N[x:=y]) M$ would represent the same substitution operation
+as both $x$ and $y$ will be replaced with $M$ anyway. 
+
+Thus we define the $\cong_\alpha$ as the smallest equivalence relation on $\Lambda_\Phi^-$
+such that $(\lambda x:\phi\; N) = (\lambda y:\phi\; N[x:=y])$ 
+and that is preserved under application and abstraction. 
+
+We can thus define the set of \textit{terms} $\Lambda_\Phi$ in the simply-typed lambda calculus
+by $\Lambda_\Phi=\Lambda_\Phi^-/\cong_\alpha$. 
+Thus, while $\Lambda_\Phi^-$ represents the set of distinct representations of programs,
+$\Lambda_\Phi$ can be seen as representing the set of distinct programs themselves. 
+
+It should be fairly easy to see that if $P\cong_\alpha Q$ then $P[x:=N]\cong_\alpha Q[x:=N]$,
+and that if $P \cong_\alpha Q$, then, $\Gamma\vdash P:\phi$ if and only if $\Gamma\vdash Q:\phi$. 
+It follows that substitution and typability are also defined for terms $\Lambda_\Phi$.  
+
+We proceed to define what it means to evaluate a program in the lambda calculus. 
+
+\subsection{$\beta$-reduction}
+We mentioned in the previous section that the abstraction term represents 
+a symbolic substitution rule that can be evaluated when applied to another term
+by an application term. 
+That is, $(\lambda x:\phi\; N)\; M$ evaluates to $N[x:=M]$. 
+We represent evaluation by the relation $\to_\beta$, 
+which is defined to be the smallest relation such that
+$((\lambda x:\phi\; N)\; M)\to_\beta N[x:=M]$ and $\to_\beta$ 
+is preserved under application and abstraction. 
+
+That is, $P\to_\beta Q$ if we can find somewhere in $P$ some application term
+applying an abstraction term to another term and replacing that application term
+with its evaluated form yields $Q$. 
+We note that if $P$ contains multiple such application terms, 
+we can choose different application terms to evaluate in each step 
+to yield multiple $Q_i$ such that $P\to_\beta Q_i$. 
+
+We note that if $\Gamma\vdash P :\phi$ and $P \to_\beta Q$, then, $\Gamma\vdash Q:\phi$.
+We note that the converse is not true, as $P$ may be untypable, 
+and an untypable term may reduce to a typable one.  
+
+We define the multi-step $\beta$-reduction relation $\twoheadrightarrow_\beta$
+to be the transitive-reflexive closure of $\to_\beta$, that is, $P\twoheadrightarrow_\beta Q$ 
+if there is a chain of zero or more evaluations that reduces $P$ to $Q$. 
+
+We call the transitive-reflexive-symmetric closure of $\to_\beta$ $\beta$-equivalence, or $\cong_\beta$. 
+
+Finally, we call a term $N$ that does not reduce to any other term $M$ $\beta$-normal. 
+We can see $\beta$-normal forms as the results of a halted chain of computations
+in the lambda-calculus. 
+
+We will now state a few more results without proof about $\beta$-reduction 
+and typability before moving on to prove the Curry-Howard Isomorphism. 
+\subsubsection{Church-Rosser Theorem} 
+We would like to know thar if $P\cong_\beta Q$ then there is some evaluation path
+such that $P$ and $Q$ eventually evaluate to the same term. 
+
+Further, we would like to know that the $\beta$-normal form that 
+results from an evaluation path of some $P$ is unique, that is, 
+there do not exist $Q\neq R$ such that both $Q$ and $R$ are $\beta$-normal
+and both $P\twoheadrightarrow_\beta Q$ and $P\twoheadrightarrow_\beta R$. 
+
+These properties are guaranteed by the Church-Rosser Theorem. 
+\begin{theorem}[Church-Rosser]
+Let $P\twoheadrightarrow_\beta Q$ and $P\twoheadrightarrow_\beta R$. 
+Then, there exists some $S$ such that $Q\twoheadrightarrow_\beta S$ 
+and $R\twoheadrightarrow_\beta S$. 
+\end{theorem}
+Two corollaries immediately follow. 
+\begin{corollary}
+For all $P \in \Lambda_\Phi$, there exists at most one $\beta$-normal
+$Q\in \Lambda_\Phi$ such that $P \cong_\beta Q$. 
+\end{corollary}
+\begin{corollary}
+If both $P\in\Lambda_\Phi$ and $Q\in\Lambda_\Phi$ are typable under $\Gamma$, 
+and $P\cong_\beta Q$, then $P$ and $Q$ have the same type under $\Gamma$. 
+\end{corollary}
 \subsection{Weak-Normalization}
+We now present one way in which a term being typable is a guarantee
+of it being semantically well defined. 
+\begin{theorem}[Weak Normalization]
+If $P$ is typable, then there exists some $\beta$-normal $N$ such that
+$P\twoheadrightarrow_\beta N$. 
+\end{theorem}
+This theorem implies that typability implies that the computation expressed 
+by the lambda term halts.
+
+It follows that the \textit{typable} subset of the simply-typed lambda calculus
+is not Turing complete. 
+
+\begin{remark}
+We will note that the weak-normalization property is not true of terms in general. 
+In particular, if we ignore the typability restriction we can define the fixed-point
+or $Y$ combinator that has the property that $f\; (Y \; f) \cong_\beta Y\; f$. 
+This allows the us to implement full recursion, including terms that never terminate. 
+
+We note that while there is no typable version of $Y$, sometimes $Y\; f$ can $\beta$-reduce
+to a typable term. 
+\end{remark}
+
+
 \subsection{Computational Power of Typed and Untyped Lambda Calculus}
 \section{The Curry-Howard Isomorphism}
 \subsection{Natural Deduction Proofs with Labeled Assumptions}
