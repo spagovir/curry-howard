@@ -1,5 +1,263 @@
 \documentclass[12pt]{article}
-%include polycode.fmt
+%% ODER: format ==         = "\mathrel{==}"
+%% ODER: format /=         = "\neq "
+%
+%
+\makeatletter
+\@ifundefined{lhs2tex.lhs2tex.sty.read}%
+  {\@namedef{lhs2tex.lhs2tex.sty.read}{}%
+   \newcommand\SkipToFmtEnd{}%
+   \newcommand\EndFmtInput{}%
+   \long\def\SkipToFmtEnd#1\EndFmtInput{}%
+  }\SkipToFmtEnd
+
+\newcommand\ReadOnlyOnce[1]{\@ifundefined{#1}{\@namedef{#1}{}}\SkipToFmtEnd}
+\usepackage{amstext}
+\usepackage{amssymb}
+\usepackage{stmaryrd}
+\DeclareFontFamily{OT1}{cmtex}{}
+\DeclareFontShape{OT1}{cmtex}{m}{n}
+  {<5><6><7><8>cmtex8
+   <9>cmtex9
+   <10><10.95><12><14.4><17.28><20.74><24.88>cmtex10}{}
+\DeclareFontShape{OT1}{cmtex}{m}{it}
+  {<-> ssub * cmtt/m/it}{}
+\newcommand{\texfamily}{\fontfamily{cmtex}\selectfont}
+\DeclareFontShape{OT1}{cmtt}{bx}{n}
+  {<5><6><7><8>cmtt8
+   <9>cmbtt9
+   <10><10.95><12><14.4><17.28><20.74><24.88>cmbtt10}{}
+\DeclareFontShape{OT1}{cmtex}{bx}{n}
+  {<-> ssub * cmtt/bx/n}{}
+\newcommand{\tex}[1]{\text{\texfamily#1}}	% NEU
+
+\newcommand{\Sp}{\hskip.33334em\relax}
+
+
+\newcommand{\Conid}[1]{\mathit{#1}}
+\newcommand{\Varid}[1]{\mathit{#1}}
+\newcommand{\anonymous}{\kern0.06em \vbox{\hrule\@width.5em}}
+\newcommand{\plus}{\mathbin{+\!\!\!+}}
+\newcommand{\bind}{\mathbin{>\!\!\!>\mkern-6.7mu=}}
+\newcommand{\rbind}{\mathbin{=\mkern-6.7mu<\!\!\!<}}% suggested by Neil Mitchell
+\newcommand{\sequ}{\mathbin{>\!\!\!>}}
+\renewcommand{\leq}{\leqslant}
+\renewcommand{\geq}{\geqslant}
+\usepackage{polytable}
+
+%mathindent has to be defined
+\@ifundefined{mathindent}%
+  {\newdimen\mathindent\mathindent\leftmargini}%
+  {}%
+
+\def\resethooks{%
+  \global\let\SaveRestoreHook\empty
+  \global\let\ColumnHook\empty}
+\newcommand*{\savecolumns}[1][default]%
+  {\g@addto@macro\SaveRestoreHook{\savecolumns[#1]}}
+\newcommand*{\restorecolumns}[1][default]%
+  {\g@addto@macro\SaveRestoreHook{\restorecolumns[#1]}}
+\newcommand*{\aligncolumn}[2]%
+  {\g@addto@macro\ColumnHook{\column{#1}{#2}}}
+
+\resethooks
+
+\newcommand{\onelinecommentchars}{\quad-{}- }
+\newcommand{\commentbeginchars}{\enskip\{-}
+\newcommand{\commentendchars}{-\}\enskip}
+
+\newcommand{\visiblecomments}{%
+  \let\onelinecomment=\onelinecommentchars
+  \let\commentbegin=\commentbeginchars
+  \let\commentend=\commentendchars}
+
+\newcommand{\invisiblecomments}{%
+  \let\onelinecomment=\empty
+  \let\commentbegin=\empty
+  \let\commentend=\empty}
+
+\visiblecomments
+
+\newlength{\blanklineskip}
+\setlength{\blanklineskip}{0.66084ex}
+
+\newcommand{\hsindent}[1]{\quad}% default is fixed indentation
+\let\hspre\empty
+\let\hspost\empty
+\newcommand{\NB}{\textbf{NB}}
+\newcommand{\Todo}[1]{$\langle$\textbf{To do:}~#1$\rangle$}
+
+\EndFmtInput
+\makeatother
+%
+%
+%
+%
+%
+%
+% This package provides two environments suitable to take the place
+% of hscode, called "plainhscode" and "arrayhscode". 
+%
+% The plain environment surrounds each code block by vertical space,
+% and it uses \abovedisplayskip and \belowdisplayskip to get spacing
+% similar to formulas. Note that if these dimensions are changed,
+% the spacing around displayed math formulas changes as well.
+% All code is indented using \leftskip.
+%
+% Changed 19.08.2004 to reflect changes in colorcode. Should work with
+% CodeGroup.sty.
+%
+\ReadOnlyOnce{polycode.fmt}%
+\makeatletter
+
+\newcommand{\hsnewpar}[1]%
+  {{\parskip=0pt\parindent=0pt\par\vskip #1\noindent}}
+
+% can be used, for instance, to redefine the code size, by setting the
+% command to \small or something alike
+\newcommand{\hscodestyle}{}
+
+% The command \sethscode can be used to switch the code formatting
+% behaviour by mapping the hscode environment in the subst directive
+% to a new LaTeX environment.
+
+\newcommand{\sethscode}[1]%
+  {\expandafter\let\expandafter\hscode\csname #1\endcsname
+   \expandafter\let\expandafter\endhscode\csname end#1\endcsname}
+
+% "compatibility" mode restores the non-polycode.fmt layout.
+
+\newenvironment{compathscode}%
+  {\par\noindent
+   \advance\leftskip\mathindent
+   \hscodestyle
+   \let\\=\@normalcr
+   \let\hspre\(\let\hspost\)%
+   \pboxed}%
+  {\endpboxed\)%
+   \par\noindent
+   \ignorespacesafterend}
+
+\newcommand{\compaths}{\sethscode{compathscode}}
+
+% "plain" mode is the proposed default.
+% It should now work with \centering.
+% This required some changes. The old version
+% is still available for reference as oldplainhscode.
+
+\newenvironment{plainhscode}%
+  {\hsnewpar\abovedisplayskip
+   \advance\leftskip\mathindent
+   \hscodestyle
+   \let\hspre\(\let\hspost\)%
+   \pboxed}%
+  {\endpboxed%
+   \hsnewpar\belowdisplayskip
+   \ignorespacesafterend}
+
+\newenvironment{oldplainhscode}%
+  {\hsnewpar\abovedisplayskip
+   \advance\leftskip\mathindent
+   \hscodestyle
+   \let\\=\@normalcr
+   \(\pboxed}%
+  {\endpboxed\)%
+   \hsnewpar\belowdisplayskip
+   \ignorespacesafterend}
+
+% Here, we make plainhscode the default environment.
+
+\newcommand{\plainhs}{\sethscode{plainhscode}}
+\newcommand{\oldplainhs}{\sethscode{oldplainhscode}}
+\plainhs
+
+% The arrayhscode is like plain, but makes use of polytable's
+% parray environment which disallows page breaks in code blocks.
+
+\newenvironment{arrayhscode}%
+  {\hsnewpar\abovedisplayskip
+   \advance\leftskip\mathindent
+   \hscodestyle
+   \let\\=\@normalcr
+   \(\parray}%
+  {\endparray\)%
+   \hsnewpar\belowdisplayskip
+   \ignorespacesafterend}
+
+\newcommand{\arrayhs}{\sethscode{arrayhscode}}
+
+% The mathhscode environment also makes use of polytable's parray 
+% environment. It is supposed to be used only inside math mode 
+% (I used it to typeset the type rules in my thesis).
+
+\newenvironment{mathhscode}%
+  {\parray}{\endparray}
+
+\newcommand{\mathhs}{\sethscode{mathhscode}}
+
+% texths is similar to mathhs, but works in text mode.
+
+\newenvironment{texthscode}%
+  {\(\parray}{\endparray\)}
+
+\newcommand{\texths}{\sethscode{texthscode}}
+
+% The framed environment places code in a framed box.
+
+\def\codeframewidth{\arrayrulewidth}
+\RequirePackage{calc}
+
+\newenvironment{framedhscode}%
+  {\parskip=\abovedisplayskip\par\noindent
+   \hscodestyle
+   \arrayrulewidth=\codeframewidth
+   \tabular{@{}|p{\linewidth-2\arraycolsep-2\arrayrulewidth-2pt}|@{}}%
+   \hline\framedhslinecorrect\\{-1.5ex}%
+   \let\endoflinesave=\\
+   \let\\=\@normalcr
+   \(\pboxed}%
+  {\endpboxed\)%
+   \framedhslinecorrect\endoflinesave{.5ex}\hline
+   \endtabular
+   \parskip=\belowdisplayskip\par\noindent
+   \ignorespacesafterend}
+
+\newcommand{\framedhslinecorrect}[2]%
+  {#1[#2]}
+
+\newcommand{\framedhs}{\sethscode{framedhscode}}
+
+% The inlinehscode environment is an experimental environment
+% that can be used to typeset displayed code inline.
+
+\newenvironment{inlinehscode}%
+  {\(\def\column##1##2{}%
+   \let\>\undefined\let\<\undefined\let\\\undefined
+   \newcommand\>[1][]{}\newcommand\<[1][]{}\newcommand\\[1][]{}%
+   \def\fromto##1##2##3{##3}%
+   \def\nextline{}}{\) }%
+
+\newcommand{\inlinehs}{\sethscode{inlinehscode}}
+
+% The joincode environment is a separate environment that
+% can be used to surround and thereby connect multiple code
+% blocks.
+
+\newenvironment{joincode}%
+  {\let\orighscode=\hscode
+   \let\origendhscode=\endhscode
+   \def\endhscode{\def\hscode{\endgroup\def\@currenvir{hscode}\\}\begingroup}
+   %\let\SaveRestoreHook=\empty
+   %\let\ColumnHook=\empty
+   %\let\resethooks=\empty
+   \orighscode\def\hscode{\endgroup\def\@currenvir{hscode}}}%
+  {\origendhscode
+   \global\let\hscode=\orighscode
+   \global\let\endhscode=\origendhscode}%
+
+\makeatother
+\EndFmtInput
+%
 \newcommand{\proves}{\vdash}
 \usepackage{amsthm}
 \usepackage{amsmath}
@@ -43,35 +301,54 @@ the smallest set of finite strings of characters in containing all of the below:
 We note that in particular that we can't explicitly express $\bot$ in the implicational fragment. Thus, the implicational fragment is called a \textit{positive} subset of the full intuitionistic logic. We will later show that this omission doesn't affect the set of (implicational) sentences we can prove. 
 
 We will assume the unique reading lemma. Then, we can equivalently define logical formulae as strings corresponding to the following abstract syntax tree (in Haskell):  
-\begin{code}
-module CurryHoward where
-import qualified Data.Set as Set
-import qualified Data.Map as Map
-import qualified Data.List as List
-
-type PV = String 
-data Formula = Atomic PV 
-               | Implies Formula Formula 
-               deriving (Show, Eq, Ord) 
-\end{code}
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{16}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\mathbf{module}\;\Conid{CurryHoward}\;\mathbf{where}{}\<[E]%
+\\
+\>[B]{}\mathbf{import}\;\Varid{qualified}\;\Conid{\Conid{Data}.Set}\;\Varid{as}\;\Conid{Set}{}\<[E]%
+\\
+\>[B]{}\mathbf{import}\;\Varid{qualified}\;\Conid{\Conid{Data}.Map}\;\Varid{as}\;\Conid{Map}{}\<[E]%
+\\
+\>[B]{}\mathbf{import}\;\Varid{qualified}\;\Conid{\Conid{Data}.List}\;\Varid{as}\;\Conid{List}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\mathbf{type}\;\Conid{PV}\mathrel{=}\Conid{String}{}\<[E]%
+\\
+\>[B]{}\mathbf{data}\;\Conid{Formula}\mathrel{=}\Conid{Atomic}\;\Conid{PV}{}\<[E]%
+\\
+\>[B]{}\hsindent{16}{}\<[16]%
+\>[16]{}\mid \Conid{Implies}\;\Conid{Formula}\;\Conid{Formula}{}\<[E]%
+\\
+\>[B]{}\hsindent{16}{}\<[16]%
+\>[16]{}\mathbf{deriving}\;(\Conid{Show},\Conid{Eq},\Conid{Ord}){}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
 
 The conversion back to strings goes as follows:
-\begin{code}
-formula :: Formula -> String 
-formula (Atomic v) = v
-formula (Implies p q) = "(" ++ formula p ++ "\\to " ++ formula q ++ ")" 
-\end{code}
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{formula}\mathbin{::}\Conid{Formula}\to \Conid{String}{}\<[E]%
+\\
+\>[B]{}\Varid{formula}\;(\Conid{Atomic}\;\Varid{v})\mathrel{=}\Varid{v}{}\<[E]%
+\\
+\>[B]{}\Varid{formula}\;(\Conid{Implies}\;\Varid{p}\;\Varid{q})\mathrel{=}\text{\ttfamily \char34 (\char34}\plus \Varid{formula}\;\Varid{p}\plus \text{\ttfamily \char34 \char92 \char92 to~\char34}\plus \Varid{formula}\;\Varid{q}\plus \text{\ttfamily \char34 )\char34}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
 
 A \textit{theory} is a subset $\Gamma\subset\Phi$. We call a finite theory $\Gamma$ a \textit{context}. 
 For a formula $\varphi$ we wrote $\Gamma,\phi$ for $\Gamma\cup\{\varphi\}$. 
-\begin{code}
-type Theory = Set.Set Formula
-\end{code}
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\mathbf{type}\;\Conid{Theory}\mathrel{=}\Conid{\Conid{Set}.Set}\;\Conid{Formula}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
 For a context $\Gamma$ and a formula $\varphi$ we write $\Gamma\vdash\varphi$ to denote the fact that $\Gamma$ proves $\varphi$.  
 We call any $\varphi$ such that $\vdash\varphi$ a theorem of IPC($\to$). 
-A proof of $\Gamma\vdash\varphi$ is a (finite) tree whose nodes are labeled with context-formula pairs, which we will denote $\Delta\vdash\psi$, and that obey the following rules:
+A proof of $\Gamma\vdash\varphi$ is a (finite) tree whose nodes are labeled with context-formula pairs, which we will denote $\Delta\vdash\psi$, and that obey the following rules, and whose root is labeled $\Gamma\vdash\varphi$, such that the below hold:
 \begin{itemize}
-\item The root node is labeled by $\Gamma\vdash\varphi$, that is, the conclusion of the proof.  
 \item The leaf nodes are labeled $\Delta,\psi\vdash\psi$. These correspond to using an axiom in a proof. 
 \item Non-leaf nodes have one or more children. The labels of parent nodes are inferred from those of their children by one of the following rules: 
 \begin{itemize}
@@ -80,46 +357,54 @@ A proof of $\Gamma\vdash\varphi$ is a (finite) tree whose nodes are labeled with
 \end{itemize}
 \end{itemize}
 We can write a natural deduction tree and proof-checking rules in Haskell as follows:
-\begin{code}
-data Proof = Axiom (Theory, Formula) 
-             | Introduction (Theory, Formula) Proof 
-             | Elimination (Theory, Formula) Proof Proof 
-             deriving (Show, Eq)
-label :: Proof -> (Theory, Formula) 
-label (Axiom a) = a
-label (Introduction a _) = a
-label (Elimination a _ _) = a  
-valid :: Proof -> Bool
-valid (Axiom (g, p)) = Set.member p g
-valid (Introduction (g, Implies p q) c) = 
-  (fst $ label c) == Set.insert p g && (snd $ label c) == q
-valid (Introduction _ _) = False 
-valid (Elimination (g, p) major minor) = 
-  (fst $ label major) == g 
-  && (fst $ label minor) == g 
-  && (snd $ label major) == Implies (snd $ label minor) p 
-\end{code}
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{3}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{14}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\mathbf{data}\;\Conid{Proof}\mathrel{=}\Conid{Axiom}\;(\Conid{Theory},\Conid{Formula}){}\<[E]%
+\\
+\>[B]{}\hsindent{14}{}\<[14]%
+\>[14]{}\mid \Conid{Introduction}\;(\Conid{Theory},\Conid{Formula})\;\Conid{Proof}{}\<[E]%
+\\
+\>[B]{}\hsindent{14}{}\<[14]%
+\>[14]{}\mid \Conid{Elimination}\;(\Conid{Theory},\Conid{Formula})\;\Conid{Proof}\;\Conid{Proof}{}\<[E]%
+\\
+\>[B]{}\hsindent{14}{}\<[14]%
+\>[14]{}\mathbf{deriving}\;(\Conid{Show},\Conid{Eq}){}\<[E]%
+\\
+\>[B]{}\Varid{label}\mathbin{::}\Conid{Proof}\to (\Conid{Theory},\Conid{Formula}){}\<[E]%
+\\
+\>[B]{}\Varid{label}\;(\Conid{Axiom}\;\Varid{a})\mathrel{=}\Varid{a}{}\<[E]%
+\\
+\>[B]{}\Varid{label}\;(\Conid{Introduction}\;\Varid{a}\;\anonymous )\mathrel{=}\Varid{a}{}\<[E]%
+\\
+\>[B]{}\Varid{label}\;(\Conid{Elimination}\;\Varid{a}\;\anonymous \;\anonymous )\mathrel{=}\Varid{a}{}\<[E]%
+\\
+\>[B]{}\Varid{valid}\mathbin{::}\Conid{Proof}\to \Conid{Bool}{}\<[E]%
+\\
+\>[B]{}\Varid{valid}\;(\Conid{Axiom}\;(\Varid{g},\Varid{p}))\mathrel{=}\Varid{\Conid{Set}.member}\;\Varid{p}\;\Varid{g}{}\<[E]%
+\\
+\>[B]{}\Varid{valid}\;(\Conid{Introduction}\;(\Varid{g},\Conid{Implies}\;\Varid{p}\;\Varid{q})\;\Varid{c})\mathrel{=}{}\<[E]%
+\\
+\>[B]{}\hsindent{3}{}\<[3]%
+\>[3]{}(\Varid{fst}\mathbin{\$}\Varid{label}\;\Varid{c})\equiv \Varid{\Conid{Set}.insert}\;\Varid{p}\;\Varid{g}\mathrel{\wedge}(\Varid{snd}\mathbin{\$}\Varid{label}\;\Varid{c})\equiv \Varid{q}{}\<[E]%
+\\
+\>[B]{}\Varid{valid}\;(\Conid{Introduction}\;\anonymous \;\anonymous )\mathrel{=}\Conid{False}{}\<[E]%
+\\
+\>[B]{}\Varid{valid}\;(\Conid{Elimination}\;(\Varid{g},\Varid{p})\;\Varid{major}\;\Varid{minor})\mathrel{=}{}\<[E]%
+\\
+\>[B]{}\hsindent{3}{}\<[3]%
+\>[3]{}(\Varid{fst}\mathbin{\$}\Varid{label}\;\Varid{major})\equiv \Varid{g}{}\<[E]%
+\\
+\>[B]{}\hsindent{3}{}\<[3]%
+\>[3]{}\mathrel{\wedge}(\Varid{fst}\mathbin{\$}\Varid{label}\;\Varid{minor})\equiv \Varid{g}{}\<[E]%
+\\
+\>[B]{}\hsindent{3}{}\<[3]%
+\>[3]{}\mathrel{\wedge}(\Varid{snd}\mathbin{\$}\Varid{label}\;\Varid{major})\equiv \Conid{Implies}\;(\Varid{snd}\mathbin{\$}\Varid{label}\;\Varid{minor})\;\Varid{p}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
 We note that we usually use the following notation to write nodes of natural deduction trees: $$\frac{Children}{Label},$$
-ie, proof trees are displayed according to the program below: 
-\begin{code}
-asTex :: Proof -> String
-asTex (Axiom a) = showLabel a
-asTex (Introduction a c) = 
-  "\\dfrac{" 
-  ++ asTex c 
-  ++ "}{" 
-  ++ showLabel a 
-  ++ "}"
-asTex (Elimination a c1 c2) = 
-  "\\dfrac{" 
-  ++ asTex c1 
-  ++ "\\," 
-  ++ asTex c2 
-  ++ "}{" 
-  ++ showLabel a 
-  ++ "}" 
-showLabel (g,p) = "\\{" ++ (concat $ List.intersperse "," $ map formula $ Set.toList g) ++ "\\}\\vdash " ++ formula p
-\end{code}
 
 \subsection{Natural Deduction \& BHK}
 We can interpret the rules of natural deduction in BHK as follows. First, we take $\{\varphi_1,\varphi_2,\dots,\varphi_n\}\vdash \psi$ as 
@@ -133,7 +418,8 @@ Finally, the $\to$E rule can be interpreted as applying the program that is the 
 to get a proof of the conclusion. 
 
 \subsection{Natural Deduction \& Hilbert-Style Proofs}
-Recall the Hilbert-style proof system for classical logic where we had only one inference rule, modus ponens, and instead had three axiom schemes
+Let's compare natural deduction for intuitionistic logic to
+the Hilbert-style proof system for classical logic where we had only one inference rule, modus ponens, and instead had three axiom schemes
 (we assume that $\to$ associates to the right for brevity):
 \begin{itemize}
 \item[$P_1$:] $\phi\to(\psi\to\phi)$. 
@@ -146,7 +432,6 @@ What does $\to$I correspond to? We note that $P_1$ and $P_2$ in the Hilbert proo
 \begin{theorem}[Deduction Theorem]
 In the Hilbert proof system with only axioms $P_1$ and $P_2$, if $\Gamma,\phi\vdash\psi$, then, $\Gamma\vdash\phi\to\psi$.
 \end{theorem}
-We will delay the proof until we have introduced a slight variation on proof trees in order to prove a slightly stronger version of the theorem.
  
 Further, we can show that every member of the axiom schemes $P_1$ and $P_2$ are theorems of IPC($\to$) in natural deduction: 
 \begin{theorem}
@@ -156,108 +441,10 @@ Then, for all $\phi,\psi,\chi\in\Phi$, we have that in IPC($\to$), $\vdash P_{1,
 \begin{proof}
 For any $\phi,\psi$, the following is a natural deduction proof of $P_{1,\phi,\psi}$:
 $$\frac{\dfrac{\phi ,\psi \vdash \phi }{\phi \vdash (\psi \to \phi )}}{\vdash (\phi \to (\psi \to \phi ))}.$$
-We delay the proof of $P_2$ until after we have the Curry-Howard Isomorphism. 
+The proof of $P2$ is omitted for brevity.
 \end{proof}
 \end{theorem} 
 
-\subsection{Intuitionistic Algebraic Semantics}
-We would like to dwell a bit on the semantics of intuitionistic logic before moving on to the simply typed lambda-calculus. 
-In specific, we would like to show that the set of statements provable by natural deduction in the implicational fragment 
-is equal to the set of statements that are \textit{semantically} necessarily true according to the algebraic semantics
-of the full system of intuitionistic logic. 
-
-Further, we want to use the semantics of logical deduction to illustrate some important differences between intuitionistic logic
-and classical logic. 
-We noted in the previous section that natural deduction for the implicational fragment of intuitionistic logic corresponds to 
-the Hilbert proof system in classical logic without the axiom $((\phi\to\bot)\to\bot)\to\phi$. 
-This axiom can be interpreted as formalizing the idea of a proof (of a positive statement) by contradiction: 
-that is, if $\neg\phi$ proves a contradiction, then $\phi$ must be true. 
-The fact that this axiom is not given in intuitionistic logic can be seen as a consequence of the \textit{constructive} nature
-of intuitionistic logic: it's not clear how a construction of a contradiction out of $\phi\to\bot$ can directly be used to make a
-construction of $\phi$ itself.  
-We would like to be able to actually prove that intuitionistic logic can't actually prove that in general $((\phi\to\bot)\to\bot)\to\phi$. 
-We can do this semantically by appeal to a topological interpretation of the algebraic semantics of intuitionistic logic. 
-
-\subsubsection{The Lindenbaum-Tarski Algebra of IPC($\to$)}
-Let's try to construct the algebraic semantics of the full intuitionistic propositional calculus from the semantics of its implicational fragment.
-
-Consider a theory $\Gamma$, and the following lemma about natural deduction:
-\begin{lemma}
-Let $\Gamma$ be a theory in $IPC(\to)$. Then the following are true:
-\begin{itemize}
-\item[1.] $\Gamma\vdash \varphi\to\varphi$
-\item[2.] If $\Gamma\vdash \varphi\to\psi$ and $\Gamma\vdash \psi\to\chi$, then $\Gamma\vdash\varphi\to\chi$.
-\item[3.] If $\Gamma\vdash \varphi\leftrightarrow\varphi'$, $\Gamma\vdash\psi\leftrightarrow\psi'$, and $\Gamma\vdash\varphi\to\psi$, 
-then, $\Gamma\vdash\varphi'\to\psi'$. 
-\begin{proof}
-\begin{itemize}
-\item[1.] $$\dfrac{\Gamma,\varphi\vdash\varphi}{\Gamma\vdash\varphi\to\varphi}.$$
-\item[2.] Let $\frac{\Pi[\cup\Delta]}{\Gamma\cup\Delta\vdash \varphi\to\psi}$ be a proof of $\Gamma\vdash\varphi\to\psi$
-with every instance of $\Gamma$ replaced with $\Gamma\cup\Delta$, 
-and $\frac{\Sigma[\Delta]}{\Gamma\cup\Delta\vdash \psi\to\chi}$ be a proof of $\Gamma\vdash \psi\to\chi$ 
-with the same substitutions.  
-Then, 
-$$
-\dfrac{
-\dfrac{
-  \dfrac{\Gamma,\varphi\vdash\varphi\text{ } \Gamma,\varphi\vdash \varphi\to\psi}{\Gamma,\varphi\vdash\psi}\text{ }
-  \Gamma,\varphi\vdash\psi\to\chi
-  }
-  {
-  \Gamma,\varphi\vdash\chi
-  }
-}
-{
-  \Gamma\vdash\varphi\to\chi
-}
-$$
-\item[3.] Follows from two applications of (2.).
-\end{itemize}
-\end{proof}
-\end{itemize}
-\end{lemma} 
-Items (1.) and (2.) from the above lemma means that if we define $\phi\leq_\Gamma \psi$ as $\Gamma\vdash \phi\to\psi$ 
-for any two formulae $\phi,\psi\in\Phi$ 
-(or equivalently, $\Gamma,\phi\vdash\psi$), 
-$\leq_\Gamma$ forms a preorder on the set of formulas $\Phi$. 
-Then, defining the equivalence relation $\phi\sim_\Gamma\psi\iff\Gamma\vdash\phi\leftrightarrow\psi$,
-we get that $\Phi/\sim_\Gamma$ is a partially ordered set under $\leq_\Gamma$ 
-where the largest element, which we can denote as $1$, is the set of $\phi$ such that $\Gamma\vdash\phi$---
-we note (1.) implies that this class is non-empty.  
-We call $\Phi/\sim_\Gamma$ the \textit{Lindenbaum-Tarski algebra} for $\Gamma$. 
-
-Further, item (3.) means that the connective $\to$
-induces a binary operator $\to_\Gamma$ on $\Gamma\vdash\phi$ such that $[\psi]_\sim\to_\Gamma[\phi]_\sim=[\psi\to\phi]_\sim$.
-The operator $\to_\Gamma$ obeys the axiom that $\phi\to_\Gamma\psi = 1$ if and only if $\phi \leq_\Gamma \psi$. 
-
-We can interpret elements of $\Phi/\sim_\Gamma$ as classes of formulae that are semantically-equivalent
-in the sense that the set of formulae whose demonstrations can be constructed from those 
-of each element in the class are the same. 
-
-\subsubsection{Heyting Algebras}
-In the previous section we defined a way to assign semantic values to formulae
-in a theory $\Gamma$ such formulae with the same semantic value could be considered
-logically equivalent under $\Gamma$.
-We noted that the semantic values have the structure of a partially ordered set
-with a greatest element and has a single binary operator that interprets the
-implicational fragment's single logical connectives. 
-
-We would like to define an algebraic structure that can be used to assign values
-to statements in the full intuitive propositional calculus with its full complement
-of logical connectives: $\wedge,\vee,$ and $\bot$. 
-We will call this algebraic structure a \textit{Heyting Algebra} $\mathcal{H}=(H,\vee,\wedge,\to,0,1)$. 
-
-We would like $\vee$ and $\wedge$ to still obey the distributive lattice axioms. 
-We will interpret $\bot$ as absurdity, and stipulate that in intuitive logic $\bot$ follows
-the principle of explosion: for any $\phi$ and any $\Gamma,$ $\Gamma\vdash\bot\to\phi$. 
-Thus we will interpret $\bot$ as always having the value of the least element, $0$, of the Heyting algebra.
- 
-
-
-
-
-\subsubsection{Soundness and Completeness}
-\subsubsection{Topological Intepretation of Heyting Algebras}
 \section{Simply-Typed Lambda Calculus}
 We remember that in the BHK-interpretation a proof $\varphi\to\psi$ should correspond 
 to a program that takes a proof of $\varphi$ and returns a proof of $\psi$. 
@@ -280,10 +467,13 @@ we can think of the subset of terms that can be assigned types as the set of ter
 A type in the simply-typed lambda calculus will be a string following the same syntactic rules as propositions in IPC($\to$). 
 Thus we can immediately identify the set of simple types with $\Phi$.\footnote{
 The types in the simply-typed lambda calculus are called ``simple'' as they lack (a) parameters or (b) recursion. 
-For example, the following |List| type definition in Haskell would not be a simple type: 
-\begin{spec}
-List a = Cons a (List a) | Empty
-\end{spec}
+For example, the following \ensuremath{\Conid{List}} type definition in Haskell would not be a simple type: 
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Conid{List}\;\Varid{a}\mathrel{=}\Conid{Cons}\;\Varid{a}\;(\Conid{List}\;\Varid{a})\mid \Conid{Empty}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
 } 
 In the context of the simply-typed lambda calculus, members of $PV$ are called \textit{type variables}. 
 If $\sigma$ and $\tau$ are types and $\alpha$ is a type variable, 
@@ -302,12 +492,21 @@ This rule is called \textit{application}; if $M$ evaluates to some function $f$ 
 \end{itemize}
 
 That is, $\Lambda_\Phi^-$ corresponds to the set of strings representing the following Haskell data structure:
-\begin{code}
-type V = String
-data Term = Variable V 
-          | Abstraction V Formula Term 
-          | Application Term Term
-\end{code}
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{11}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\mathbf{type}\;\Conid{V}\mathrel{=}\Conid{String}{}\<[E]%
+\\
+\>[B]{}\mathbf{data}\;\Conid{Term}\mathrel{=}\Conid{Variable}\;\Conid{V}{}\<[E]%
+\\
+\>[B]{}\hsindent{11}{}\<[11]%
+\>[11]{}\mid \Conid{Abstraction}\;\Conid{V}\;\Conid{Formula}\;\Conid{Term}{}\<[E]%
+\\
+\>[B]{}\hsindent{11}{}\<[11]%
+\>[11]{}\mid \Conid{Application}\;\Conid{Term}\;\Conid{Term}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
 
 For a pre-term $M\in \Lambda_\Phi^-$ in the lambda calculus, we call the set of variables $x$ appearing in $M$ 
 outside of an abstraction term $(\lambda x.\phi \; M)$ the set of \textit{free variables} $FV(M)$. 
@@ -334,10 +533,13 @@ to terms of type $\phi$.
 Thus: we call a finite $\Gamma\subset V\times\Phi$ such that 
 $\Gamma$ defines a function from its \textit{domain} $\{x\in V\mid \exists \phi((x,\phi)\in\Gamma)\}$ to $\Phi$ 
 a \textit{context}. 
-We denote the range of the function $\Gamma$ defines as $||\Gamma||$. 
-\begin{code}
-type Context' = Map.Map V Formula 
-\end{code}
+We denote the range of the function $\Gamma$ defines as $|\Gamma|$. 
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\mathbf{type}\;\Conid{Context'}\mathrel{=}\Conid{\Conid{Map}.Map}\;\Conid{V}\;\Conid{Formula}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
 Denote by $C$ the set of such contexts $\Gamma$.  
 We denote the pairs $(x,\phi)\in \Gamma$ as $x:\phi$, 
 which we interpret as $\Gamma$ assigning the type $\phi$ to the variable $x$. 
@@ -513,61 +715,105 @@ we can present the correspondence.
 \begin{theorem}
 Let $\phi\in\Phi$. 
 Then, a context $\Gamma\vdash \phi$ in natural deduction 
-if and only if $\Gamma = ||\Gamma'||$ where $\Gamma'$ is a context in the simply-typed lambda calculus
+if and only if $\Gamma = |\Gamma'|$ where $\Gamma'$ is a context in the simply-typed lambda calculus
 and there exists some lambda term $M\in\Lambda_\Phi$ such that $\Gamma'\vdash M:\phi$. 
 \begin{proof}
-First we prove that $\Gamma'\vdash M:\phi$ implies that $||\Gamma'|| \vdash \phi$. 
+First we prove that $\Gamma'\vdash M:\phi$ implies that $|\Gamma'| \vdash \phi$. 
 We claim there is a surjection $\chi$ from $\{(\Gamma,M)\in C\times\Lambda_\Phi\mid \text{M is typable under }\Gamma\}$ 
-to proofs in natural deduction such that if $\Gamma'\vdash M:\phi$, then $\chi(\Gamma',M)$ is a proof of $||\Gamma'||\vdash \phi$. 
+to proofs in natural deduction such that if $\Gamma'\vdash M:\phi$, then $\chi(\Gamma',M)$ is a proof of $|\Gamma'|\vdash \phi$. 
 We define $\chi(\Gamma',M)$ inductively as follows: 
-\begin{code}
-range :: Context' -> Context
-range = Set.fromList . Map.elems
-
-termToProof :: Context' -> Term -> Maybe Proof
-\end{code}
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{range}\mathbin{::}\Conid{Context'}\to \Conid{Context}{}\<[E]%
+\\
+\>[B]{}\Varid{range}\mathrel{=}\Varid{\Conid{Set}.fromList}\mathbin{\circ}\Varid{\Conid{Map}.elems}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\Varid{termToProof}\mathbin{::}\Conid{Context'}\to \Conid{Term}\to \Conid{Maybe}\;\Conid{Proof}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
 First, when $M=x$, we have that if $\Gamma'\vdash x:\phi$ for some $\phi$, then 
-$x:\phi\in\Gamma'$, so $\phi\in ||\Gamma'||$. Then, we can define $\chi(\Gamma',M) = (||\Gamma'||\vdash \phi)$,
-and $\chi(\Gamma',M)$ is a proper proof of $||\Gamma'||\vdash\phi$ under the axiom rule. 
+$x:\phi\in\Gamma'$, so $\phi\in |\Gamma'|$. Then, we can define $\chi(\Gamma',M) = (|\Gamma'|\vdash \phi)$,
+and $\chi(\Gamma',M)$ is a proper proof of $|\Gamma'|\vdash\phi$ under the axiom rule. 
 This corresponds to the following code in Haskell: 
-\begin{code}
-termToProof c (Variable v) = fmap (Axiom . (range c,)) $ Map.lookup c v
-\end{code}
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{termToProof}\;\Varid{c}\;(\Conid{Variable}\;\Varid{v})\mathrel{=}\Varid{fmap}\;(\Conid{Axiom}\mathbin{\circ}(\Varid{range}\;\Varid{c},))\mathbin{\$}\Varid{\Conid{Map}.lookup}\;\Varid{c}\;\Varid{v}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
 Secondly, when $M = (P\; Q)$, we get that $\Gamma'\vdash M:\phi$ only if 
 there exists some $\psi$ such that $\Gamma'\vdash P:\psi\to\phi$ and 
 $\Gamma'\vdash P:\psi$. 
 
-Then, $$\chi(\Gamma', M) = \frac{\chi(\Gamma',P)\text{ }\chi(\Gamma',Q)}{||\Gamma'||\vdash \phi}$$
-is a proof of $||\Gamma'||\vdash\phi$ using the $\to$E rule as $\chi(\Gamma',P)$ is a proof of $\psi\to\phi$ 
+Then, $$\chi(\Gamma', M) = \frac{\chi(\Gamma',P)\text{ }\chi(\Gamma',Q)}{|\Gamma'|\vdash \phi}$$
+is a proof of $|\Gamma'|\vdash\phi$ using the $\to$E rule as $\chi(\Gamma',P)$ is a proof of $\psi\to\phi$ 
 and $\chi(\Gamma',Q)$ is a proof of $\psi$. 
 Or, in Haskell,
-\begin{code}
-termToProof c (Application p q) = 
-  case (termToProof c p, termToProof c q) of
-    (Just proofP, Just proofQ) ->
-      case (label proofP, label proofQ) of
-        ((_,Implies psi phi),(_,psi')) | psi==psi' -> 
-          Just Elimination (range c, phi) proofP proofQ
-        _ -> Nothing
-    _ -> Nothing 
-\end{code}
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{3}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{5}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{7}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{9}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{11}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{termToProof}\;\Varid{c}\;(\Conid{Application}\;\Varid{p}\;\Varid{q})\mathrel{=}{}\<[E]%
+\\
+\>[B]{}\hsindent{3}{}\<[3]%
+\>[3]{}\mathbf{case}\;(\Varid{termToProof}\;\Varid{c}\;\Varid{p},\Varid{termToProof}\;\Varid{c}\;\Varid{q})\;\mathbf{of}{}\<[E]%
+\\
+\>[3]{}\hsindent{2}{}\<[5]%
+\>[5]{}(\Conid{Just}\;\Varid{proofP},\Conid{Just}\;\Varid{proofQ})\to {}\<[E]%
+\\
+\>[5]{}\hsindent{2}{}\<[7]%
+\>[7]{}\mathbf{case}\;(\Varid{label}\;\Varid{proofP},\Varid{label}\;\Varid{proofQ})\;\mathbf{of}{}\<[E]%
+\\
+\>[7]{}\hsindent{2}{}\<[9]%
+\>[9]{}((\anonymous ,\Conid{Implies}\;\Varid{psi}\;\Varid{phi}),(\anonymous ,\Varid{psi'}))\mid \Varid{psi}\equiv \Varid{psi'}\to {}\<[E]%
+\\
+\>[9]{}\hsindent{2}{}\<[11]%
+\>[11]{}\Conid{Just}\;\Conid{Elimination}\;(\Varid{range}\;\Varid{c},\Varid{phi})\;\Varid{proofP}\;\Varid{proofQ}{}\<[E]%
+\\
+\>[7]{}\hsindent{2}{}\<[9]%
+\>[9]{}\anonymous \to \Conid{Nothing}{}\<[E]%
+\\
+\>[3]{}\hsindent{2}{}\<[5]%
+\>[5]{}\anonymous \to \Conid{Nothing}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
 
 Finally, when $M = (\lambda x:\phi\; N)$, we get that if $M$ is typable under $\Gamma'$
 then for some $\tau$, $\Gamma'\vdash M:\phi\to\tau$ and $\Gamma',x:\phi\vdash N:\tau$. 
 
-Then, $$\chi(\Gamma',M) = \frac{\chi(\Gamma'\cup\{x:\phi\},N)}{||\Gamma'||\vdash \phi\to\tau}$$
-is a valid natural deduction proof of $||\Gamma'||\vdash\phi\to\tau$ under the $\to$I rule 
-as $\chi(\Gamma'\cup\{x:\phi\})$ is a valid proof of $||\Gamma'||,\phi\vdash\tau$. 
+Then, $$\chi(\Gamma',M) = \frac{\chi(\Gamma'\cup\{x:\phi\},N)}{|\Gamma'|\vdash \phi\to\tau}$$
+is a valid natural deduction proof of $|\Gamma'|\vdash\phi\to\tau$ under the $\to$I rule 
+as $\chi(\Gamma'\cup\{x:\phi\})$ is a valid proof of $|\Gamma'|,\phi\vdash\tau$. 
 Or, in Haskell,
-\begin{code}
-termToProof c (Abstraction x phi n) =
-  fmap 
-    (\proofN -> 
-      Introduction (range c, Implies phi (snd $ label proofN)) proofN
-    ) 
-  $ termToProof (Map.insert x phi c) n
-
-\end{code}
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{3}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{5}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{7}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\Varid{termToProof}\;\Varid{c}\;(\Conid{Abstraction}\;\Varid{x}\;\Varid{phi}\;\Varid{n})\mathrel{=}{}\<[E]%
+\\
+\>[B]{}\hsindent{3}{}\<[3]%
+\>[3]{}\Varid{fmap}\;{}\<[E]%
+\\
+\>[3]{}\hsindent{2}{}\<[5]%
+\>[5]{}(\lambda \Varid{proofN}\to {}\<[E]%
+\\
+\>[5]{}\hsindent{2}{}\<[7]%
+\>[7]{}\Conid{Introduction}\;(\Varid{range}\;\Varid{c},\Conid{Implies}\;\Varid{phi}\;(\Varid{snd}\mathbin{\$}\Varid{label}\;\Varid{proofN}))\;\Varid{proofN}{}\<[E]%
+\\
+\>[3]{}\hsindent{2}{}\<[5]%
+\>[5]{}){}\<[E]%
+\\
+\>[B]{}\hsindent{3}{}\<[3]%
+\>[3]{}\mathbin{\$}\Varid{termToProof}\;(\Varid{\Conid{Map}.insert}\;\Varid{x}\;\Varid{phi}\;\Varid{c})\;\Varid{n}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
 
 Then, if we show that $\chi$ is a surjection, we prove the equivalence. 
 
@@ -575,7 +821,7 @@ We note however that for any proof of $\Gamma\vdash\phi$ we can construct a $\Ga
 a proof of $\Gamma\vdash\phi$ as follows. First, construct $\Gamma'$ from $\Gamma = \{\psi_1,\psi_2,\dots,\psi_n\}$ 
 by choosing $\{x_1,x_2, \dots,x_n\}\in V$ and letting $\Gamma' = \{x_1:\psi_1,x_2:\psi_2,\dots,x_n:\psi_n\}$. 
 
-Then, for $\Gamma'$ such that $||\Gamma'|| = \Gamma$ and a proof of $\Gamma\vdash\phi$ we construct the corresponding
+Then, for $\Gamma'$ such that $|\Gamma'| = \Gamma$ and a proof of $\Gamma\vdash\phi$ we construct the corresponding
 lambda term inductively as follows:
 
 If the proof is an axiom $\Gamma,\phi\colon \phi$, then we have that there exists some $i$ such that $\psi_i\in \Gamma$
@@ -657,5 +903,10 @@ But that means that natural deduction is inconsistent, which we know is not true
 So $Y$ is untypable. 
 \end{proof} 
 \end{theorem}
+
+\begin{thebibliography}{}
+\item
+Morten Heine B. S{\o}rensen \& Pawe{\l} Urzyczyn, \textit{Lectures on the Curry-Howard Isomorphisms}. 
+\end{thebibliography}
 \end{document}
 
